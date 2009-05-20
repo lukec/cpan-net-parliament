@@ -4,6 +4,7 @@ use MooseX::AttributeInflate;
 use XML::Simple;
 use Net::Parliament::UserAgent;
 use HTML::TableExtract qw/tree/;
+use Net::Parliament::Member;
 
 has '_members_base_url' => (
     is => 'ro',
@@ -61,13 +62,13 @@ sub Get_members {
             warn "Error parsing row: $@";
             $row->dump;
         }
-        push @members, $member;
+        push @members, $self->_load_member($member);
     }
 
     return \@members;
 }
 
-sub Load_member {
+sub _load_member {
     my $self = shift;
     my $member = shift;
     my $member_url = $member->{member_url};
@@ -81,7 +82,7 @@ sub Load_member {
         die "Couldn't extract details from $member_url\n";
     }
 
-    return $member;
+    return Net::Parliament::Member->new(%$member);
 }
 
 sub _extract_photo_url {
