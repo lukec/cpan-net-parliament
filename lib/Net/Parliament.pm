@@ -2,6 +2,7 @@ package Net::Parliament;
 use Moose;
 use Net::Parliament::UserAgent;
 use HTML::TableExtract qw/tree/;
+use HTML::TreeBuilder;
 
 =head1 NAME
 
@@ -30,8 +31,7 @@ and then parse it into hashrefs.
 =cut
 
 has '_members_base_url' => (
-    is      => 'ro',
-    isa     => 'Str',
+    is      => 'ro', isa => 'Str',
     default => 'http://webinfo.parl.gc.ca/MembersOfParliament/',
 );
 
@@ -44,9 +44,19 @@ has 'members_html_url' => (
     },
 );
 
+has '_bills_base_domain' => (
+    is      => 'ro', isa => 'Str',
+    default => 'http://www2.parl.gc.ca',
+);
+
+has '_bills_base_url' => (
+    is      => 'ro', isa => 'Str',
+    default => 'http://www2.parl.gc.ca/HouseBills/billsgovernment.aspx?',
+);
+
 has 'ua' => (
     is      => 'ro',
-    isa     => 'Net::Parliament::UserAgent',
+    isa     => 'Object',
     handles => ['get'],
     default => sub { Net::Parliament::UserAgent->new },
 );
@@ -103,6 +113,75 @@ sub Get_members {
     }
 
     return \@members;
+}
+
+=head2 Get_bills()
+
+This method returns an arrayref containing a hashref for each
+Government Bill raised in parliament.  
+
+=cut
+
+sub Get_bills {
+    my $self = shift;
+    my %opts = @_;
+
+    die "Must specify which Parliament" unless $opts{parl};
+    die "Must specify which Session"    unless $opts{session};
+
+    my $url = $self->_bills_base_url . "Parl=$opts{parl}"
+        . "&Ses=$opts{session}";
+    my $html = $self->get($url);
+    my $block_oh_html = <<EOT;
+<div class="BillBlock BillBlockOdd" id="divBillBlockC2">
+ <span class="BillNumberCell">C-2</span>
+ <div class="BillSummary">
+  <span class="BillLongText">An Act to amend the Criminal Code and to make consequential amendments to other Acts</span>
+  <div class="BillSponsor"><a class="WebOption" onclick="GetWebOptions('PRISM','Affiliation',105824,'1');return false;" onmouseout="inDiv=0;setTimeout('TimeoutHide()',1000);return false;" href="/HousePublications/GetWebOptionsCallBack.aspx?SourceSystem=PRISM&amp;ResourceType=Affiliation&amp;ResourceID=105824&amp;language=1&amp;DisplayMode=2">The Minister of Justice</a></div>
+  <div>
+   <div><a class="BillVersionLink" href="/HouseBills/StaticLinkRedirector.aspx?Language=e&amp;LinkTitle=%28C-2%29%20Legislative%20Summary&amp;RedirectUrl=%2fSites%2fLOP%2fLEGISINFO%2findex.asp%3fList%3dls%26Language%3dE%26Query%3d5273%26Session%3d15&amp;RefererUrl=X&amp;StatsEnabled=true">Legislative Summary</a></div>
+   <div><a class="BillVersionLink" href="/HousePublications/Publication.aspx?DocId=3078412&amp;Language=e&amp;Mode=1">First Reading</a></div>
+   <div><a class="BillVersionLink" href="/HousePublications/Publication.aspx?DocId=3151626&amp;Language=e&amp;Mode=1">As passed by the House of Commons</a></div>
+   <div><a class="BillVersionLink" href="/HousePublications/Publication.aspx?DocId=3320180&amp;Language=e&amp;Mode=1">Royal Assent</a></div>
+   <div><a class="BillVersionLink" href="/housebills/BillVotes.aspx?Language=e&amp;Mode=1&amp;Parl=39&amp;Ses=2&amp;Bill=C2">Votes</a></div>
+  </div>
+ </div>
+</div>
+EOT
+
+    my $tree = HTML::TreeBuilder->new_from_content($html);
+    my @billblocks = $tree->look_down(class => qr/\bBillBlock\b/);
+    my @bills;
+    for my $b (@billblocks) {
+        my $bill = {};
+        $bill->{number} = $b->look_down(
+            class => 'BillNumberCell')->content->[0];
+        $bill->{summary} = $b->look_down(
+            class => 'BillLongText')->content->[0];
+        $bill->{sponsor} = $b->look_down(
+            class => 'BillSponsor')->content->[0];
+
+        if (ref($bill->{sponsor})) {
+            my $bs = $bill->{sponsor};
+            $bill->{sponsor} = $bs->content->[0];
+            my $url = $bs->look_down(
+                _tag => 'a')->attr('href');
+            if ($url =~ m/ResourceID=(\d+)/) {
+                $bill->{sponsor_id} = $1;
+            }
+        }
+
+        my @links = $b->look_down(class => 'BillVersionLink');
+        for my $link (@links) {
+            my $url = $self->_bills_base_domain . $link->attr('href');
+            $url =~ s/\s/%20/g;
+            push @{ $bill->{links} }, { $link->content->[0] => $url };
+        }
+
+        push @bills, $bill;
+    }
+    return \@bills;
+
 }
 
 sub _load_member {
