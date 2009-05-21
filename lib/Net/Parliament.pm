@@ -211,6 +211,29 @@ sub Get_bill_votes {
     return $xml->{Vote};
 }
 
+=head2 Get_member_votes()
+
+This method returns an arrayref containing a hashref for each
+vote made by the specified member.
+
+=cut
+
+sub Get_member_votes {
+    my $self = shift;
+    my %opts = @_;
+
+    die "Must specify which Parliament" unless $opts{parl};
+    die "Must specify which Session"    unless $opts{session};
+    die "Must specify which Member"     unless $opts{member};
+
+    my $url = $self->_members_base_url 
+        . "ProfileMP.aspx?key=$opts{member}&SubSubject=1006&"
+        . "FltrParl=$opts{parl}&FltrSes=$opts{session}&VoteType=1&"
+        . 'xml=true&SchemaVersion=1.0';
+    my $xml = XMLin($self->get($url));
+    return $xml->{Vote};
+}
+
 sub _load_member {
     my $self       = shift;
     my $member     = shift;
