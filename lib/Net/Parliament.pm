@@ -84,6 +84,11 @@ Options:
 If set to true, extra data from the member's home page will
 be fetched.  This takes much longer.
 
+=item limit
+
+Only return this number of results.  Only works with extended
+mode.  Useful for testing.
+
 =back
 
 =cut
@@ -104,7 +109,9 @@ sub Get_members {
     my $table_tree = $member_table->tree;
 
     my @members;
-    for my $i (1 .. $table_tree->maxrow) {
+    my $max = $opts{limit} || $table_tree->maxrow;
+    $max = $table_tree->maxrow if $max > $table_tree->maxrow;
+    for my $i (1 .. $max) {
         my $row = $table_tree->row($i);
         my @cols =$row->look_down('_tag', 'td');
 
