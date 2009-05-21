@@ -69,16 +69,28 @@ has 'ua' => (
 
 =head1 CLASS METHODS
 
-=head2 Get_members()
+=head2 Get_members(%opts)
 
 This method returns an arrayref containing a hashref for each
 member of parliament.  Fetching the data is cached via
 Net::Parliament::UserAgent.
 
+Options:
+
+=over 4
+
+=item extended
+
+If set to true, extra data from the member's home page will
+be fetched.  This takes much longer.
+
+=back
+
 =cut
 
 sub Get_members {
     my $self = shift;
+    my %opts = @_;
 
     my $members_page = $self->get($self->members_html_url);
 
@@ -110,12 +122,18 @@ sub Get_members {
             if (ref($member->{caucus})) {
                 $member->{caucus} = $member->{caucus}->content->[0];
             }
+            if ($member->{member_url} =~ m/Key=(\d+)/) {
+                $member->{member_id} = $1;
+            }
         };
         if ($@) {
             warn "Error parsing row: $@";
             $row->dump;
         }
-        push @members, $self->_load_member($member);
+
+        $member = $self->_load_member($member)
+            if $opts{extended};
+        push @members, $member;
     }
 
     return \@members;
@@ -125,6 +143,20 @@ sub Get_members {
 
 This method returns an arrayref containing a hashref for each
 Government Bill raised in parliament.  
+
+Options:
+
+=over 4
+
+=item parl
+
+Which Parliament.  Should be 35 to 40-ish.
+
+=item session
+
+Which session of Parliament.  Should be 1, 2 or sometimes 3.
+
+=back
 
 =cut
 
@@ -194,6 +226,24 @@ EOT
 This method returns an arrayref containing a hashref for each
 vote on the specified Bill.
 
+Options:
+
+=over 4
+
+=item parl
+
+Which Parliament.  Should be 35 to 40-ish.
+
+=item session
+
+Which session of Parliament.  Should be 1, 2 or sometimes 3.
+
+=item bill
+
+Which bill to fetch votes for.  Should be like 'C-2' or 'C2'.
+
+=back
+
 =cut
 
 sub Get_bill_votes {
@@ -215,6 +265,24 @@ sub Get_bill_votes {
 
 This method returns an arrayref containing a hashref for each
 vote made by the specified member.
+
+Options:
+
+=over 4
+
+=item parl
+
+Which Parliament.  Should be 35 to 40-ish.
+
+=item session
+
+Which session of Parliament.  Should be 1, 2 or sometimes 3.
+
+=item member
+
+Which member to fetch votes for.  Should be a number like 105824.
+
+=back
 
 =cut
 
