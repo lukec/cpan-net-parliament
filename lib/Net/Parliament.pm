@@ -1,27 +1,62 @@
 package Net::Parliament;
 use Moose;
-use MooseX::AttributeInflate;
-use XML::Simple;
 use Net::Parliament::UserAgent;
 use HTML::TableExtract qw/tree/;
-use Net::Parliament::Member;
+
+=head1 NAME
+
+Net::Parliament - Scrape data from parl.gc.ca
+
+=head1 VERSION
+
+Version 0.01
+
+=cut
+
+our $VERSION = '0.01';
+
+=head1 SYNOPSIS
+
+Quick summary of what the module does.
+
+Perhaps a little code snippet.
+
+    use Net::Parliament;
+
+    my $foo = Net::Parliament->new();
+    ...
+
+=head1 EXPORT
+
+A list of functions that can be exported.  You can delete this section
+if you don't export anything, such as for a purely object-oriented module.
+
+=head1 FUNCTIONS
+
+=head2 function1
+
+=cut
 
 has '_members_base_url' => (
-    is => 'ro',
-    isa => 'Str',
+    is      => 'ro',
+    isa     => 'Str',
     default => 'http://webinfo.parl.gc.ca/MembersOfParliament/',
 );
 
 has 'members_html_url' => (
-	is => 'ro',
-	isa => 'Str',
-	default => sub { shift->_members_base_url . 'MainMPsCompleteList.aspx?TimePeriod=Current' },
+    is      => 'ro',
+    isa     => 'Str',
+    default => sub {
+        shift->_members_base_url
+            . 'MainMPsCompleteList.aspx?TimePeriod=Current';
+    },
 );
 
-has_inflated 'ua' => (
-	is => 'ro',
-	isa => 'Net::Parliament::UserAgent',
-	handles => ['get'],
+has 'ua' => (
+    is      => 'ro',
+    isa     => 'Net::Parliament::UserAgent',
+    handles => ['get'],
+    default => sub { Net::Parliament::UserAgent->new },
 );
 
 sub Get_members {
@@ -69,8 +104,8 @@ sub Get_members {
 }
 
 sub _load_member {
-    my $self = shift;
-    my $member = shift;
+    my $self       = shift;
+    my $member     = shift;
     my $member_url = $member->{member_url};
 
     my $content = $self->get($member_url);
@@ -82,26 +117,26 @@ sub _load_member {
         die "Couldn't extract details from $member_url\n";
     }
 
-    return Net::Parliament::Member->new(%$member);
+    return $member;
 }
 
 sub _extract_photo_url {
-    my $self = shift;
+    my $self    = shift;
     my $content = shift;
 
     my $te = HTML::TableExtract->new( depth => 3, count => 1);
     $te->parse($content);
 
     my ($member_table) = $te->tables;
-    my $row = $member_table->tree->row(1);
-    my ($profile_img) = $row->look_down('_tag', 'img');
+    my $row            = $member_table->tree->row(1);
+    my ($profile_img)  = $row->look_down('_tag', 'img');
     return $self->_members_base_url . $profile_img->attr('src');
 }
 
 sub _extract_more_details {
-    my $self = shift;
+    my $self    = shift;
     my $content = shift;
-    my $member = shift;
+    my $member  = shift;
 
     my $te = HTML::TableExtract->new( depth => 5, count => 6);
     $te->parse($content);
@@ -126,5 +161,56 @@ sub _extract_more_details {
         };
     }
 }
+
+=head1 AUTHOR
+
+Luke Closs, C<< <cpan at 5thplane.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<bug-net-parliament at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Net-Parliament>.  I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Net::Parliament
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Net-Parliament>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Net-Parliament>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Net-Parliament>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Net-Parliament/>
+
+=back
+
+=head1 ACKNOWLEDGEMENTS
+
+Thanks to parl.gc.ca for the parts of their site in XML format.
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2009 Luke Closs, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
 
 1;
