@@ -3,6 +3,7 @@ use Moose;
 use Net::Parliament::UserAgent;
 use HTML::TableExtract qw/tree/;
 use HTML::TreeBuilder;
+use XML::Simple;
 
 =head1 NAME
 
@@ -52,6 +53,11 @@ has '_bills_base_domain' => (
 has '_bills_base_url' => (
     is      => 'ro', isa => 'Str',
     default => 'http://www2.parl.gc.ca/HouseBills/billsgovernment.aspx?',
+);
+
+has '_bill_votes_base_url' => (
+    is      => 'ro', isa => 'Str',
+    default => 'http://www2.parl.gc.ca/housebills/BillVotes.aspx?xml=True&SchemaVersion=1.0',
 );
 
 has 'ua' => (
@@ -181,7 +187,28 @@ EOT
         push @bills, $bill;
     }
     return \@bills;
+}
 
+=head2 Get_bill_votes()
+
+This method returns an arrayref containing a hashref for each
+vote on the specified Bill.
+
+=cut
+
+sub Get_bill_votes {
+    my $self = shift;
+    my %opts = @_;
+
+    die "Must specify which Parliament" unless $opts{parl};
+    die "Must specify which Session"    unless $opts{session};
+    die "Must specify which Bill"       unless $opts{bill};
+    $opts{bill} =~ s/-//;
+
+    my $url = $self->_bill_votes_base_url 
+        . "&Parl=$opts{parl}&Ses=$opts{session}&Bill=$opts{bill}";
+    my $xml = XMLin($self->get($url));
+    return $xml->{Vote};
 }
 
 sub _load_member {
