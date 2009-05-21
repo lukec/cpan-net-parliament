@@ -17,23 +17,15 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
+This module will fetch HTML and XML from parl.gc.ca,
+and then parse it into hashrefs.
 
     use Net::Parliament;
 
-    my $foo = Net::Parliament->new();
-    ...
-
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 FUNCTIONS
-
-=head2 function1
+    my $members = Net::Parliament->Get_members();
+    for my $member (@$members) {
+        ...
+    }
 
 =cut
 
@@ -58,6 +50,16 @@ has 'ua' => (
     handles => ['get'],
     default => sub { Net::Parliament::UserAgent->new },
 );
+
+=head1 CLASS METHODS
+
+=head2 Get_members()
+
+This method returns an arrayref containing a hashref for each
+member of parliament.  Fetching the data is cached via
+Net::Parliament::UserAgent.
+
+=cut
 
 sub Get_members {
     my $self = shift;
