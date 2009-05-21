@@ -11,11 +11,13 @@ isa_ok $np, 'Net::Parliament';
 my $bills = $np->Get_bills( parl => 39, session => 2 );
 my $bill = shift @$bills;
 is_deeply $bill, {
-    number => 'C-2',
+    name => 'C-2',
     summary => 'An Act to amend the Criminal Code and to make consequential '
                . 'amendments to other Acts',
-    sponsor => 'The Minister of Justice',
+    sponsor_title => 'The Minister of Justice',
     sponsor_id => 105824,
+    parliament => 39,
+    session => 2,
     links => [
         {
             'Legislative Summary' => 'http://www2.parl.gc.ca/HouseBills/StaticLinkRedirector.aspx?Language=e&LinkTitle=(C-2)%20Legislative%20Summary&RedirectUrl=%2fSites%2fLOP%2fLEGISINFO%2findex.asp%3fList%3dls%26Language%3dE%26Query%3d5273%26Session%3d15&RefererUrl=X&StatsEnabled=true',
@@ -37,11 +39,13 @@ is_deeply $bill, {
 
 $bill = shift @$bills;
 is_deeply $bill, {
-    number => 'C-3',
+    name => 'C-3',
+    parliament => 39,
+    session => 2,
     summary => 'An Act to amend the Immigration and Refugee Protection Act '
                . '(certificate and special advocate) and to make a '
                . 'consequential amendment to another Act',
-    sponsor => 'The Minister of Public Safety',
+    sponsor_title => 'The Minister of Public Safety',
     sponsor_id => 78755,
     links => [
         {

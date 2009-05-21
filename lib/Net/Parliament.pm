@@ -196,17 +196,20 @@ EOT
     my @billblocks = $tree->look_down(class => qr/\bBillBlock\b/);
     my @bills;
     for my $b (@billblocks) {
-        my $bill = {};
-        $bill->{number} = $b->look_down(
+        my $bill = {
+            parliament => $opts{parl},
+            session => $opts{session},
+        };
+        $bill->{name} = $b->look_down(
             class => 'BillNumberCell')->content->[0];
         $bill->{summary} = $b->look_down(
             class => 'BillLongText')->content->[0];
-        $bill->{sponsor} = $b->look_down(
+        $bill->{sponsor_title} = $b->look_down(
             class => 'BillSponsor')->content->[0];
 
-        if (ref($bill->{sponsor})) {
-            my $bs = $bill->{sponsor};
-            $bill->{sponsor} = $bs->content->[0];
+        if (ref($bill->{sponsor_title})) {
+            my $bs = $bill->{sponsor_title};
+            $bill->{sponsor_title} = $bs->content->[0];
             my $url = $bs->look_down(
                 _tag => 'a')->attr('href');
             if ($url =~ m/ResourceID=(\d+)/) {
