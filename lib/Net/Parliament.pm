@@ -24,10 +24,8 @@ and then parse it into hashrefs.
 
     use Net::Parliament;
 
-    my $members = Net::Parliament->Get_members();
-    for my $member (@$members) {
-        ...
-    }
+    my $parl = Net::Parliament->new;
+    my $members = $parl->Get_members();
 
 =cut
 
@@ -67,7 +65,7 @@ has 'ua' => (
     default => sub { Net::Parliament::UserAgent->new },
 );
 
-=head1 CLASS METHODS
+=head1 METHODS
 
 =head2 Get_members(%opts)
 
