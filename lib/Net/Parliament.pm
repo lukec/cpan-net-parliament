@@ -84,8 +84,7 @@ be fetched.  This takes much longer.
 
 =item limit
 
-Only return this number of results.  Only works with extended
-mode.  Useful for testing.
+Only return this number of results.  Useful for testing.
 
 =back
 
