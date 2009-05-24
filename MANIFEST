@@ -6,6 +6,8 @@ Makefile.PL
 MANIFEST
 README
 t/00-load.t
-t/boilerplate.t
+t/get-bills.t
+t/get-members.t
+t/get-votes.t
 t/pod-coverage.t
 t/pod.t
