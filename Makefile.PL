@@ -15,7 +15,7 @@ WriteMakefile(
         'Test::More'         => 0,
         'Moose'              => 0,
         'HTML::TableExtract' => 0,
-        'KML::Simple'        => 0,
+        'XML::Simple'        => 0,
         'HTML::TreeBuilder'  => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
