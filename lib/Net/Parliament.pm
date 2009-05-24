@@ -317,10 +317,15 @@ sub _load_member {
     my $content = $self->get($member_url);
     eval {
         $member->{profile_photo_url} = $self->_extract_photo_url($content);
+    };
+    if ($@) {
+        die "Couldn't extract profile photo from $member_url: $@\n";
+    }
+    eval {
         $self->_extract_more_details($content, $member);
     };
     if ($@) {
-        die "Couldn't extract details from $member_url\n";
+        die "Couldn't extract details from $member_url: $@\n";
     }
 
     return $member;
@@ -333,9 +338,15 @@ sub _extract_photo_url {
     my $te = HTML::TableExtract->new( depth => 3, count => 1);
     $te->parse($content);
 
-    my ($member_table) = $te->tables;
-    my $row            = $member_table->tree->row(1);
-    my ($profile_img)  = $row->look_down('_tag', 'img');
+    my $profile_img;
+    eval {
+        my ($member_table) = $te->tables;
+        my $row            = $member_table->tree->row(1);
+        ($profile_img)  = $row->look_down('_tag', 'img');
+    };
+    if ($@) {
+        die "Error finding profile image in content:\n$content\n\n";
+    }
     return $self->_members_base_url . $profile_img->attr('src');
 }
 
