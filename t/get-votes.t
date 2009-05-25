@@ -5,11 +5,11 @@ use Test::More qw/no_plan/;
 
 use_ok 'Net::Parliament';
 
-my $np = Net::Parliament->new();
+my $np = Net::Parliament->new( parliament => 39, session => 2 );
 isa_ok $np, 'Net::Parliament';
 
 Bill_votes: {
-    my $votes = $np->Get_bill_votes( parl => 39, session => 2, bill => 'C-2');
+    my $votes = $np->bill_votes('C-2');
     my $vote = shift @$votes;
     is_deeply $vote, {
         'TotalNays' => '1',
@@ -29,8 +29,7 @@ Bill_votes: {
 
 
 Member_votes: {
-    my $votes = $np->Get_member_votes(parl => 39, session => 2, bill => 'C-2',
-        member => 78755);
+    my $votes = $np->member_votes(78755);
     my $vote = shift @$votes;
     is_deeply $vote, {
         'TotalNays'    => '64',

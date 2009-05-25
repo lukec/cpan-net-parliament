@@ -5,11 +5,11 @@ use Test::More qw/no_plan/;
 
 use_ok 'Net::Parliament';
 
-my $np = Net::Parliament->new();
+my $np = Net::Parliament->new( parliament => 40, session => 2 );
 isa_ok $np, 'Net::Parliament';
 
 Lite: {
-    my $members = $np->Get_members();
+    my $members = $np->members();
     my $member = shift @$members;
     is_deeply $member, {
         'caucus' => 'Conservative',
@@ -22,7 +22,7 @@ Lite: {
 }
 
 Full: {
-    my $members = $np->Get_members( extended => 1, limit => 1);
+    my $members = $np->members( extended => 1, limit => 1);
     my $member = shift @$members;
     is_deeply $member, {
         'profile_photo_url' =>

@@ -1,5 +1,9 @@
 Revision history for Net-Parliament
 
-0.01    Not released yet
+
+0.02    Not yet released
+ * changed the class methods, and how they are called
+
+0.01    A day or so before Mon May 25 01:31:28 PDT 2009
         First version, released on an unsuspecting world.
 

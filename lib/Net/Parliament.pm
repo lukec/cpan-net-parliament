@@ -15,7 +15,7 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -24,8 +24,11 @@ and then parse it into hashrefs.
 
     use Net::Parliament;
 
-    my $parl = Net::Parliament->new;
-    my $members = $parl->Get_members();
+    my $parl = Net::Parliament->new(
+        parliament => 40,
+        session    => 2,
+    );
+    my $members = $parl->members();
 
 =cut
 
@@ -65,9 +68,12 @@ has 'ua' => (
     default => sub { Net::Parliament::UserAgent->new },
 );
 
+has 'parliament' => (is => 'rw', isa => 'Int', required => 1);
+has 'session'    => (is => 'rw', isa => 'Int', required => 1);
+
 =head1 METHODS
 
-=head2 Get_members(%opts)
+=head2 members(%opts)
 
 This method returns an arrayref containing a hashref for each
 member of parliament.  Fetching the data is cached via
@@ -90,7 +96,7 @@ Only return this number of results.  Useful for testing.
 
 =cut
 
-sub Get_members {
+sub members {
     my $self = shift;
     my %opts = @_;
 
@@ -143,36 +149,19 @@ sub Get_members {
     return \@members;
 }
 
-=head2 Get_bills()
+=head2 bills()
 
 This method returns an arrayref containing a hashref for each
 Government Bill raised in parliament.  
 
-Options:
-
-=over 4
-
-=item parl
-
-Which Parliament.  Should be 35 to 40-ish.
-
-=item session
-
-Which session of Parliament.  Should be 1, 2 or sometimes 3.
-
-=back
-
 =cut
 
-sub Get_bills {
+sub bills {
     my $self = shift;
-    my %opts = @_;
+    my $p = $self->parliament;
+    my $s = $self->session;
 
-    die "Must specify which Parliament" unless $opts{parl};
-    die "Must specify which Session"    unless $opts{session};
-
-    my $url = $self->_bills_base_url . "Parl=$opts{parl}"
-        . "&Ses=$opts{session}";
+    my $url = $self->_bills_base_url . "Parl=$p&Ses=$s";
     my $html = $self->get($url);
     my $block_oh_html = <<EOT;
 <div class="BillBlock BillBlockOdd" id="divBillBlockC2">
@@ -196,15 +185,13 @@ EOT
     my @bills;
     for my $b (@billblocks) {
         my $bill = {
-            parliament => $opts{parl},
-            session => $opts{session},
+            parliament => $p,
+            session    => $s,
+            name => $b->look_down(class => 'BillNumberCell')->content->[0],
+            summary => $b->look_down(class => 'BillLongText')->content->[0],
+            sponsor_title =>
+                $b->look_down(class => 'BillSponsor')->content->[0]
         };
-        $bill->{name} = $b->look_down(
-            class => 'BillNumberCell')->content->[0];
-        $bill->{summary} = $b->look_down(
-            class => 'BillLongText')->content->[0];
-        $bill->{sponsor_title} = $b->look_down(
-            class => 'BillSponsor')->content->[0];
 
         if (ref($bill->{sponsor_title})) {
             my $bs = $bill->{sponsor_title};
@@ -228,82 +215,44 @@ EOT
     return \@bills;
 }
 
-=head2 Get_bill_votes()
+=head2 bill_votes( $bill_name )
 
 This method returns an arrayref containing a hashref for each
 vote on the specified Bill.
 
-Options:
-
-=over 4
-
-=item parl
-
-Which Parliament.  Should be 35 to 40-ish.
-
-=item session
-
-Which session of Parliament.  Should be 1, 2 or sometimes 3.
-
-=item bill
-
-Which bill to fetch votes for.  Should be like 'C-2' or 'C2'.
-
-=back
-
 =cut
 
-sub Get_bill_votes {
+sub bill_votes {
     my $self = shift;
-    my %opts = @_;
+    my $bill = shift or die "Must specify a bill name";
+    $bill =~ s/-//;
+    my $p = $self->parliament;
+    my $s = $self->session;
 
-    die "Must specify which Parliament" unless $opts{parl};
-    die "Must specify which Session"    unless $opts{session};
-    die "Must specify which Bill"       unless $opts{bill};
-    $opts{bill} =~ s/-//;
-
-    my $url = $self->_bill_votes_base_url 
-        . "&Parl=$opts{parl}&Ses=$opts{session}&Bill=$opts{bill}";
+    my $url = $self->_bill_votes_base_url . "&Parl=$p&Ses=$s&Bill=$bill";
     my $xml = XMLin($self->get($url));
+    
+    return [] unless $xml->{Vote};
+    return [ $xml->{Vote} ] if ref($xml->{Vote}) eq 'HASH';
     return $xml->{Vote};
 }
 
-=head2 Get_member_votes()
+=head2 member_votes( $member_id )
 
 This method returns an arrayref containing a hashref for each
 vote made by the specified member.
 
-Options:
-
-=over 4
-
-=item parl
-
-Which Parliament.  Should be 35 to 40-ish.
-
-=item session
-
-Which session of Parliament.  Should be 1, 2 or sometimes 3.
-
-=item member
-
-Which member to fetch votes for.  Should be a number like 105824.
-
-=back
-
 =cut
 
-sub Get_member_votes {
+sub member_votes {
     my $self = shift;
-    my %opts = @_;
-
-    die "Must specify which Parliament" unless $opts{parl};
-    die "Must specify which Session"    unless $opts{session};
-    die "Must specify which Member"     unless $opts{member};
+    my $member = shift or die "Must specify a member ID";
+    my $p = $self->parliament;
+    my $s = $self->session;
 
     my $url = $self->_members_base_url 
-        . "ProfileMP.aspx?key=$opts{member}&SubSubject=1006&"
-        . "FltrParl=$opts{parl}&FltrSes=$opts{session}&VoteType=1&"
+        . "ProfileMP.aspx?key=$member&SubSubject=1006&"
+        . "FltrParl=$p&FltrSes=$s&VoteType=1&"
         . 'xml=true&SchemaVersion=1.0';
     my $xml = XMLin($self->get($url));
     return $xml->{Vote};

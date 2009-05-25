@@ -5,10 +5,10 @@ use Test::More qw/no_plan/;
 
 use_ok 'Net::Parliament';
 
-my $np = Net::Parliament->new();
+my $np = Net::Parliament->new( parliament => 39, session => 2 );
 isa_ok $np, 'Net::Parliament';
 
-my $bills = $np->Get_bills( parl => 39, session => 2 );
+my $bills = $np->bills();
 my $bill = shift @$bills;
 is_deeply $bill, {
     name => 'C-2',
