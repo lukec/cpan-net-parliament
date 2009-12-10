@@ -23,7 +23,8 @@ Bill_votes: {
         'RelatedBill' => {
             'number' => 'C-2'
         },
-        'sitting' => '24'
+        'sitting' => '24',
+        'Description' => 'Concurrence at report stage of Bill C-2, An Act to amend the Criminal Code and to make consequential amendments to other Acts',
     };
 }
 
@@ -46,6 +47,7 @@ Member_votes: {
             'Nay'    => '0',
             'Yea'    => '1'
         },
-        'sitting' => '114'
+        'sitting' => '114',
+        'Description' => '3rd reading and adoption of Bill C-29, An Act to amend the Canada Elections Act (accountability with respect to loans)',
     };
 }
