@@ -11,7 +11,7 @@ Net::Parliament - Scrape data from parl.gc.ca
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
