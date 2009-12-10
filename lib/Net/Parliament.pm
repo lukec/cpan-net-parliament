@@ -9,10 +9,6 @@ use XML::Simple;
 
 Net::Parliament - Scrape data from parl.gc.ca
 
-=head1 VERSION
-
-Version 0.01
-
 =cut
 
 our $VERSION = '0.02';
